@@ -1,0 +1,62 @@
+# .gitignore — Terraform project
+# Based on the official GitHub Terraform .gitignore template
+# https://github.com/github/gitignore/blob/main/Terraform.gitignore
+
+# -----------------------------------------------------------------------
+# Local Terraform state files (contain sensitive data & resource IDs)
+# -----------------------------------------------------------------------
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl  # Optionally track this — see note below
+
+# -----------------------------------------------------------------------
+# Variable files that may contain secrets
+# -----------------------------------------------------------------------
+# terraform.tfvars is intentionally ignored.
+# Commit terraform.tfvars.example instead.
+terraform.tfvars
+*.auto.tfvars
+*.auto.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# -----------------------------------------------------------------------
+# Crash logs
+# -----------------------------------------------------------------------
+crash.log
+crash.*.log
+
+# -----------------------------------------------------------------------
+# CLI config file (may contain credentials)
+# -----------------------------------------------------------------------
+.terraformrc
+terraform.rc
+
+# -----------------------------------------------------------------------
+# Sensitive plan files (may contain resource details / secrets)
+# -----------------------------------------------------------------------
+*.tfplan
+
+# -----------------------------------------------------------------------
+# macOS / OS artifacts
+# -----------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+
+# -----------------------------------------------------------------------
+# Editor artifacts
+# -----------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# NOTE on .terraform.lock.hcl
+# HashiCorp recommends committing the lock file so every team member and
+# CI pipeline uses the exact same provider versions.
+# Uncomment the line below ONLY if you want to ignore it:
+# .terraform.lock.hcl
