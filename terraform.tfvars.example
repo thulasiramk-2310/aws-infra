@@ -1,0 +1,30 @@
+# terraform.tfvars.example
+# -----------------------------------------------------------------------
+# Copy this file to terraform.tfvars and fill in your values.
+#
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# IMPORTANT: terraform.tfvars is listed in .gitignore and should NEVER
+# be committed to source control if it contains sensitive data.
+# -----------------------------------------------------------------------
+
+# AWS region to deploy into
+aws_region = "us-east-1"
+
+# Logical project name — used as a prefix on resource names & tags
+project_name = "aws-infra"
+
+# VPC and subnet CIDR blocks
+vpc_cidr           = "10.0.0.0/16"
+public_subnet_cidr = "10.0.1.0/24"
+
+# Availability zone (must be within the selected aws_region)
+availability_zone = "us-east-1a"
+
+# EC2 instance type — t2.micro is Free Tier eligible
+instance_type = "t2.micro"
+
+# AMI ID — defaults to Amazon Linux 2023 in us-east-1.
+# If you change aws_region, update this to the correct AMI for that region.
+# See: https://docs.aws.amazon.com/linux/al2023/ug/ec2.html
+# ami_id = "ami-0c02fb55956c7d316"

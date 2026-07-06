@@ -1,0 +1,158 @@
+name: Terraform CI
+
+# ---------------------------------------------------------------------------
+# Triggers
+# ---------------------------------------------------------------------------
+# Run on every push and pull request to any branch.
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
+
+# ---------------------------------------------------------------------------
+# Permissions
+# ---------------------------------------------------------------------------
+# Read-only is sufficient for the current steps (fmt, init, validate).
+# Restore pull-requests: write once 'terraform plan' is re-enabled.
+permissions:
+  contents: read
+
+# ---------------------------------------------------------------------------
+# Environment variables
+# ---------------------------------------------------------------------------
+env:
+  TF_VERSION: "1.9.5" # Pin to a specific stable Terraform release
+
+# ---------------------------------------------------------------------------
+# TODO (after AWS account activation)
+# ---------------------------------------------------------------------------
+# 1. Add GitHub Secrets (Settings → Secrets → Actions):
+#      AWS_ACCESS_KEY_ID
+#      AWS_SECRET_ACCESS_KEY
+#      AWS_REGION
+# 2. Restore the 'Configure AWS credentials' step (see comments below).
+# 3. Restore the 'Terraform Plan' step (see comments below).
+# 4. Restore the 'Post Plan to PR' and 'Check Plan Status' steps.
+# 5. Change top-level `permissions.pull-requests` back to `write`.
+# ---------------------------------------------------------------------------
+
+jobs:
+  # =========================================================================
+  # Job: terraform
+  # Phase 1 (current) : fmt-check → init → validate  (no AWS credentials needed)
+  # Phase 2 (after AWS): add → configure-aws-credentials → plan → PR comment
+  # =========================================================================
+  terraform:
+    name: "Terraform CI"
+    runs-on: ubuntu-latest
+
+    steps:
+      # -----------------------------------------------------------------------
+      # 1. Check out the repository
+      # -----------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # 2. Set up the requested Terraform version
+      # -----------------------------------------------------------------------
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # -----------------------------------------------------------------------
+      # [DISABLED — re-enable after AWS account is activated]
+      # 3. Configure AWS credentials from GitHub Secrets
+      #
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region:            ${{ secrets.AWS_REGION }}
+      # -----------------------------------------------------------------------
+
+      # -----------------------------------------------------------------------
+      # 3. terraform fmt -check
+      #    Fails if any .tf file is not correctly formatted.
+      #    Fix locally with: terraform fmt
+      # -----------------------------------------------------------------------
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+
+      # -----------------------------------------------------------------------
+      # 4. terraform init
+      #    Downloads the AWS provider plugin and the VPC module.
+      #    Does not contact AWS — only the Terraform Registry.
+      # -----------------------------------------------------------------------
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      # -----------------------------------------------------------------------
+      # 5. terraform validate
+      #    Checks HCL syntax and internal consistency without contacting AWS.
+      # -----------------------------------------------------------------------
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      # -----------------------------------------------------------------------
+      # [DISABLED — re-enable after AWS account is activated]
+      # 6. terraform plan
+      #
+      # - name: Terraform Plan
+      #   id: plan
+      #   run: |
+      #     terraform plan \
+      #       -no-color \
+      #       -input=false \
+      #       -var="aws_region=${{ secrets.AWS_REGION }}" \
+      #       2>&1 | tee plan.txt
+      #   continue-on-error: true
+      #
+      # 7. Post Plan to PR
+      #
+      # - name: Post Plan to PR
+      #   if: github.event_name == 'pull_request'
+      #   uses: actions/github-script@v7
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     script: |
+      #       const fs = require('fs');
+      #       const plan = fs.readFileSync('plan.txt', 'utf8');
+      #       const maxLength = 65000;
+      #       const truncated = plan.length > maxLength
+      #         ? plan.substring(0, maxLength) + '\n\n... (output truncated)'
+      #         : plan;
+      #       const output = `## Terraform Plan 📋
+      #       #### fmt 🖌 \`${{ steps.fmt.outcome }}\`
+      #       #### init ⚙️ \`${{ steps.init.outcome }}\`
+      #       #### validate 🤖 \`${{ steps.validate.outcome }}\`
+      #       #### plan 📖 \`${{ steps.plan.outcome }}\`
+      #       <details><summary>Show Plan</summary>
+      #
+      #       \`\`\`terraform
+      #       ${truncated}
+      #       \`\`\`
+      #       </details>
+      #       > ⚠️ **terraform apply is NOT automated.** Run it manually.
+      #       > *Pushed by @${{ github.actor }}*`;
+      #       github.rest.issues.createComment({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         body: output
+      #       });
+      #
+      # 8. Check Plan Status
+      #
+      # - name: Check Plan Status
+      #   if: steps.plan.outcome == 'failure'
+      #   run: exit 1
+      # -----------------------------------------------------------------------
