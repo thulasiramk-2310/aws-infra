@@ -81,7 +81,7 @@ resource "aws_security_group" "web_sg" {
   # ⚠️  Allowing SSH from 0.0.0.0/0 is for demonstration purposes only.
   # In production, restrict cidr_blocks to your own IP: ["<YOUR_IP>/32"]
   ingress {
-    description = "SSH from anywhere — DEMO ONLY, restrict to MyIP/32 in production"
+    description = "SSH from anywhere - DEMO ONLY, restrict to MyIP/32 in production"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
