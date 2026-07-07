@@ -21,8 +21,11 @@
 # scripts/user_data.sh via templatefile(), keeping the final user_data payload
 # at ~7 KB — well under AWS's 16 KB raw limit.
 data "external" "html_gz" {
-  program = ["python3", "${path.module}/scripts/compress_html.py",
-             "${path.module}/website/index.html"]
+  program = [
+    "python3",
+    "${path.module}/scripts/compress_html.py",
+    "${path.module}/website/index.html",
+  ]
 }
 
 # ---------------------------------------------------------------------------
