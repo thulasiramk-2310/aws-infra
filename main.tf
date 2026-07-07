@@ -6,7 +6,7 @@
 # Resources created:
 #   • VPC          (via the official terraform-aws-modules/vpc module)
 #   • Security Group (HTTP + SSH ingress, all egress)
-#   • EC2 Instance (Amazon Linux 2023, t2.micro by default)
+#   • EC2 Instance (Amazon Linux 2023, t3.micro by default)
 
 # ---------------------------------------------------------------------------
 # Data Source — look up a recent Amazon Linux 2023 AMI automatically

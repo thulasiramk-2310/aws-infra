@@ -61,9 +61,9 @@ variable "availability_zone" {
 # EC2 Instance
 # ---------------------------------------------------------------------------
 variable "instance_type" {
-  description = "EC2 instance type. t2.micro is eligible for the AWS Free Tier."
+  description = "EC2 instance type for the web server. Default: t3.micro."
   type        = string
-  default     = "t2.micro"
+  default     = "t3.micro"
 
   validation {
     condition     = contains(["t2.micro", "t2.small", "t2.medium", "t3.micro", "t3.small"], var.instance_type)
