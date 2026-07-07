@@ -13,5 +13,12 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0" # Allow any 5.x release; blocks unexpected major-version bumps
     }
+
+    # External provider — enables the external data source used to
+    # gzip-compress website/index.html at plan time (compress_html.py)
+    external = {
+      source  = "hashicorp/external"
+      version = "~> 2.0"
+    }
   }
 }

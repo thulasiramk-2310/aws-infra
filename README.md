@@ -272,6 +272,13 @@ aws-infra/
 ├── versions.tf                # Terraform & provider version constraints
 ├── terraform.tfvars.example   # Example variable values (safe to commit)
 │
+├── scripts/
+│   ├── user_data.sh           # Apache bootstrap template (rendered by Terraform)
+│   └── compress_html.py       # Gzip helper — compresses the landing page at plan time
+│
+├── website/
+│   └── index.html             # Professional landing page served by Apache on EC2
+│
 ├── .gitignore                 # Excludes state files, secrets, and artifacts
 ├── README.md                  # This file
 │
@@ -279,6 +286,17 @@ aws-infra/
     └── workflows/
         └── terraform.yml      # GitHub Actions CI pipeline
 ```
+
+### How the landing page is delivered
+
+The 26 KB HTML file cannot be embedded directly in `user_data` because AWS enforces a **16 KB raw limit**.
+
+| Step | What happens |
+|------|-------------|
+| `terraform plan` | `scripts/compress_html.py` gzip-compresses `website/index.html` (26 KB → ~5 KB) and returns it as a base64 string via the `external` data source |
+| `templatefile()` | The base64 string is injected into `scripts/user_data.sh` as `${html_gz_b64}` |
+| EC2 boot | The instance runs the script, decodes + decompresses the HTML, and writes it to `/var/www/html/index.html` |
+| **Result** | Total `user_data` ≈ **7 KB** — well under the 16 KB limit |
 
 ---
 

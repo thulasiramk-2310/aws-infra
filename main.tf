@@ -7,6 +7,23 @@
 #   • VPC          (via the official terraform-aws-modules/vpc module)
 #   • Security Group (HTTP + SSH ingress, all egress)
 #   • EC2 Instance (Amazon Linux 2023, t3.micro by default)
+#
+# Supporting files:
+#   • scripts/user_data.sh    — Apache bootstrap template (rendered at plan time)
+#   • scripts/compress_html.py — gzip helper called by the external data source
+#   • website/index.html      — professional landing page served by Apache
+
+# ---------------------------------------------------------------------------
+# External Data Source — gzip-compress website/index.html at plan time
+# ---------------------------------------------------------------------------
+# compress_html.py reads website/index.html, applies gzip level-9 compression
+# (26 KB → ~5 KB), and returns a base64 string.  That string is injected into
+# scripts/user_data.sh via templatefile(), keeping the final user_data payload
+# at ~7 KB — well under AWS's 16 KB raw limit.
+data "external" "html_gz" {
+  program = ["python3", "${path.module}/scripts/compress_html.py",
+             "${path.module}/website/index.html"]
+}
 
 # ---------------------------------------------------------------------------
 # Data Source — look up a recent Amazon Linux 2023 AMI automatically
@@ -121,23 +138,15 @@ resource "aws_instance" "web" {
   # Request a public IP so the instance is reachable from the internet
   associate_public_ip_address = true
 
-  # Bootstrap script — installs Apache and deploys the professional landing page.
+  # Bootstrap script — rendered from scripts/user_data.sh at plan time.
   #
-  # Why base64encode(join())?
-  #   Terraform's HCL heredoc (<<-EOF) WILL interpolate ${...} patterns, which
-  #   breaks CSS custom properties like var(--aws). Using base64encode(join([],
-  #   file())) reads index.html as a raw string at plan time — no interpolation
-  #   occurs. AWS EC2 automatically base64-decodes user_data before execution.
-  user_data = base64encode(join("\n", [
-    "#!/bin/bash",
-    "yum update -y",
-    "yum install -y httpd",
-    "systemctl start httpd",
-    "systemctl enable httpd",
-    "cat > /var/www/html/index.html << 'HTMLEOF'",
-    file("${path.module}/index.html"),
-    "HTMLEOF"
-  ]))
+  # The HTML landing page (website/index.html, 26 KB) is gzip-compressed to
+  # ~5 KB by scripts/compress_html.py (via the external data source above),
+  # then base64-encoded to ~6.5 KB and injected as ${html_gz_b64}.
+  # Total user_data ≈ 7 KB — well under AWS's 16 KB raw limit.
+  user_data = templatefile("${path.module}/scripts/user_data.sh", {
+    html_gz_b64 = data.external.html_gz.result.html_gz_b64
+  })
 
   # Ensure the VPC and security group are fully created before launching
   depends_on = [module.vpc, aws_security_group.web_sg]
