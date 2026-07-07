@@ -249,7 +249,9 @@ web_url            = "http://54.123.45.67"
 Open `web_url` in your browser (~2 minutes after apply, while Apache starts) to see:
 
 ```
-Hello from Terraform — hashicorp-tutorial
+AWS Infrastructure Deployment Successful
+Infrastructure provisioned automatically using Terraform on AWS.
+... (and the rest of the professional landing page)
 ```
 
 To retrieve outputs at any time:
